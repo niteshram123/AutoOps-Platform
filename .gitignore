@@ -11,6 +11,7 @@ build/
 coverage/
 reports/*
 !reports/.gitkeep
+ci/registry/auth/
 *.tmp
 .idea/
 .vscode/
