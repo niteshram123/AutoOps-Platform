@@ -1,0 +1,16 @@
+services:
+  api-gateway:
+    build:
+      target: builder
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./services/api-gateway/src:/app/src
+    command: npm run dev
+
+  user-service:
+    environment:
+      - LOG_LEVEL=DEBUG
+    volumes:
+      - ./services/user-service/app:/app/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
