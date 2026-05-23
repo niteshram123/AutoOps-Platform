@@ -34,26 +34,35 @@ app.use('/api/users', usersProxy);
 app.use('/api/metrics', metricsProxy);
 app.use(errorHandler);
 
-const server = app.listen(config.port, () => {
-  logger.info('service started', {
-    service: 'api-gateway',
-    status: 'started',
-    port: config.port
-  });
-});
-
-function shutdown(signal) {
-  logger.info('shutdown signal received', { signal });
-  server.close(() => {
-    logger.info('service stopped', { service: 'api-gateway', signal });
-    process.exit(0);
+function startServer() {
+  const server = app.listen(config.port, () => {
+    logger.info('service started', {
+      service: 'api-gateway',
+      status: 'started',
+      port: config.port
+    });
   });
 
-  setTimeout(() => {
-    logger.error('forced shutdown after timeout', { signal });
-    process.exit(1);
-  }, 10000).unref();
+  function shutdown(signal) {
+    logger.info('shutdown signal received', { signal });
+    server.close(() => {
+      logger.info('service stopped', { service: 'api-gateway', signal });
+      process.exit(0);
+    });
+
+    setTimeout(() => {
+      logger.error('forced shutdown after timeout', { signal });
+      process.exit(1);
+    }, 10000).unref();
+  }
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  return server;
 }
 
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = { app, startServer };

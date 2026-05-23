@@ -1,0 +1,53 @@
+jenkins:
+  systemMessage: "AutoOps Platform CI - Phase 2"
+  numExecutors: 4
+  mode: NORMAL
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: "admin"
+          name: "AutoOps Admin"
+          password: "${JENKINS_ADMIN_PASSWORD:-autoops-admin-2024}"
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+  clouds:
+    - docker:
+        name: "autoops-docker"
+        dockerApi:
+          dockerHost:
+            uri: "unix:///var/run/docker.sock"
+        templates:
+          - labelString: "docker-agent"
+            dockerTemplateBase:
+              image: "autoops/jenkins-agent:latest"
+            connector:
+              attach:
+                user: "jenkins"
+            remoteFs: "/home/jenkins/agent"
+            instanceCapStr: "4"
+
+unclassified:
+  location:
+    url: "http://localhost:8080"
+  sonarGlobalConfiguration:
+    buildWrapperEnabled: true
+    installations:
+      - name: "AutoOpsSonar"
+        serverUrl: "http://sonarqube:9000"
+        credentialsId: "sonarqube-token"
+
+tool:
+  git:
+    installations:
+      - name: "Default"
+        home: "git"
+  sonarRunnerInstallation:
+    installations:
+      - name: "SonarScanner"
+        properties:
+          - installSource:
+              installers:
+                - sonarRunnerInstaller:
+                    id: "5.0.1.3006"

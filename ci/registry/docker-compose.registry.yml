@@ -1,0 +1,34 @@
+version: "3.9"
+services:
+  registry:
+    image: registry:2.8
+    container_name: autoops-registry
+    ports: ["5000:5000"]
+    environment:
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /data
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: AutoOps Registry
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
+    volumes:
+      - registry_data:/data
+      - ./auth:/auth
+    networks: [autoops-network]
+
+  registry-ui:
+    image: joxit/docker-registry-ui:2.5
+    container_name: autoops-registry-ui
+    ports: ["5001:80"]
+    environment:
+      - REGISTRY_TITLE=AutoOps Registry
+      - REGISTRY_URL=http://registry:5000
+      - SINGLE_REGISTRY=true
+    depends_on: [registry]
+    networks: [autoops-network]
+
+volumes:
+  registry_data:
+
+networks:
+  autoops-network:
+    external: true
+    name: autoops-network
