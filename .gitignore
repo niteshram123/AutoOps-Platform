@@ -9,6 +9,8 @@ build/
 *.log
 .DS_Store
 coverage/
+reports/*
+!reports/.gitkeep
 *.tmp
 .idea/
 .vscode/

@@ -1,0 +1,65 @@
+version: "3.9"
+services:
+  sonarqube:
+    image: sonarqube:10.3-community
+    container_name: autoops-sonarqube
+    ports: ["9000:9000"]
+    environment:
+      SONAR_JDBC_URL: jdbc:postgresql://sonar-db:5432/sonarqube
+      SONAR_JDBC_USERNAME: sonar
+      SONAR_JDBC_PASSWORD: sonarpass
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    depends_on:
+      sonar-db:
+        condition: service_healthy
+    networks: [autoops-network]
+    ulimits:
+      nofile: { soft: 65536, hard: 65536 }
+
+  sonar-db:
+    image: postgres:15-alpine
+    container_name: autoops-sonar-db
+    environment:
+      POSTGRES_USER: sonar
+      POSTGRES_PASSWORD: sonarpass
+      POSTGRES_DB: sonarqube
+    volumes: [sonar_db_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [autoops-network]
+
+  jenkins:
+    build:
+      context: ../jenkins
+      dockerfile: Dockerfile
+    container_name: autoops-jenkins
+    ports: ["8080:8080", "50000:50000"]
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - JENKINS_ADMIN_PASSWORD=autoops-admin-2024
+      - SONARQUBE_TOKEN=autoops-sonar-token
+      - REGISTRY_USER=admin
+      - REGISTRY_PASSWORD=autoops-registry-2024
+      - GITLAB_WEBHOOK_SECRET=autoops-webhook-secret
+    networks: [autoops-network]
+    depends_on: [sonarqube]
+
+volumes:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
+  sonar_db_data:
+  jenkins_home:
+
+networks:
+  autoops-network:
+    external: true
+    name: autoops-network
