@@ -1,7 +1,7 @@
 ARG TRIVY_VERSION=0.47.0
 FROM aquasec/trivy:${TRIVY_VERSION} AS trivy-bin
 
-FROM jenkins/jenkins:2.426.1-lts-jdk17
+FROM jenkins/jenkins:lts-jdk17
 
 USER root
 
