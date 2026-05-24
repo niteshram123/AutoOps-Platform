@@ -1,0 +1,237 @@
+{
+  "__inputs": [],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.2.2" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" }
+  ],
+  "annotations": { "list": [] },
+  "description": "SLO / SLA tracking: availability, error budgets, burn rates, and per-service SLO status",
+  "editable": true,
+  "graphTooltip": 1,
+  "id": null,
+  "panels": [
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99 }, { "color": "green", "value": 99.9 }] },
+          "unit": "percent",
+          "min": 98,
+          "max": 100,
+          "mappings": []
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "avg(autoops:availability:1h)",
+          "legendFormat": "Availability",
+          "refId": "A"
+        }
+      ],
+      "title": "Availability SLO (target: 99.9%)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 25 }, { "color": "green", "value": 75 }] },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "clamp_min((1 - (1 - avg(autoops:http_request_success_rate:5m)) / 0.001) * 100, 0)",
+          "legendFormat": "Budget Remaining",
+          "refId": "A"
+        }
+      ],
+      "title": "Error Budget Remaining",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 6 }] },
+          "unit": "short",
+          "min": 0
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": { "colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "(1 - avg(autoops:http_request_success_rate:5m)) / 0.001",
+          "legendFormat": "Burn Rate",
+          "refId": "A"
+        }
+      ],
+      "title": "Error Budget Burn Rate (1x = on track)",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "thresholds" },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "unit": "short",
+          "min": 0
+        }
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "id": 4,
+      "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"] }, "textMode": "auto" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "count(ALERTS{alertstate=\"firing\", team=\"devops\"})",
+          "legendFormat": "Active Alerts",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Alerts",
+      "type": "stat"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "percent", "min": 98, "max": 100 },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "SLO Target" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } },
+              { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "id": 5,
+      "options": { "legend": { "calcs": ["mean", "min"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "autoops:availability:1h",
+          "legendFormat": "{{service}}",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "vector(99.9)",
+          "legendFormat": "SLO Target",
+          "refId": "B"
+        }
+      ],
+      "title": "Availability Over Time vs SLO Target",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "palette-classic" }, "unit": "short", "min": 0 },
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "Burn Rate Threshold" },
+            "properties": [
+              { "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } },
+              { "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } }
+            ]
+          }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "id": 6,
+      "options": { "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom" }, "tooltip": { "mode": "multi" } },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "(1 - autoops:http_request_success_rate:5m) / 0.001",
+          "legendFormat": "{{service}} burn rate",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "vector(1)",
+          "legendFormat": "Burn Rate Threshold",
+          "refId": "B"
+        }
+      ],
+      "title": "Error Budget Burn Rate (alert if > 1)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": {
+        "defaults": { "color": { "mode": "thresholds" }, "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "Service" }, "properties": [{ "id": "custom.width", "value": 150 }] },
+          { "matcher": { "id": "byName", "options": "SLO Target" }, "properties": [{ "id": "custom.width", "value": 100 }] },
+          { "matcher": { "id": "byName", "options": "Current" }, "properties": [{ "id": "unit", "value": "percent" }, { "id": "custom.width", "value": 100 }, { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 99 }, { "color": "green", "value": 99.9 }] } }, { "id": "custom.displayMode", "value": "color-background" }] },
+          { "matcher": { "id": "byName", "options": "Status" }, "properties": [{ "id": "custom.width", "value": 80 }] },
+          { "matcher": { "id": "byName", "options": "Error Budget Used" }, "properties": [{ "id": "unit", "value": "percent" }, { "id": "custom.width", "value": 130 }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 13 },
+      "id": 7,
+      "options": { "footer": { "show": false }, "showHeader": true },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "expr": "autoops:availability:1h",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "",
+          "refId": "A"
+        }
+      ],
+      "title": "SLO Status per Service",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": { "Time": true, "__name__": true },
+            "renameByName": { "service": "Service", "Value": "Current" }
+          }
+        },
+        {
+          "id": "calculateField",
+          "options": {
+            "alias": "SLO Target",
+            "mode": "reduceRow",
+            "reduce": { "reducer": "sum" },
+            "binary": { "left": "Current", "operator": "*", "right": "0" }
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 38,
+  "tags": ["autoops", "slo", "sla"],
+  "templating": { "list": [] },
+  "time": { "from": "now-24h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "AutoOps - SLO / SLA Dashboard",
+  "uid": "autoops-slo",
+  "version": 1
+}

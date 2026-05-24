@@ -8,6 +8,8 @@ const rateLimit = require('express-rate-limit');
 const config = require('./config');
 const logger = require('./middleware/logger');
 const errorHandler = require('./middleware/errorHandler');
+const prometheusMiddleware = require('./middleware/prometheusMiddleware');
+const { register } = require('./metrics');
 const healthRouter = require('./routes/health');
 const usersProxy = require('./routes/users');
 const metricsProxy = require('./routes/metrics');
@@ -28,6 +30,19 @@ app.use(morgan('combined', {
   }
 }));
 app.use(express.json());
+
+// Prometheus instrumentation middleware — must come before routes
+app.use(prometheusMiddleware);
+
+// Prometheus metrics endpoint
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+  } catch (err) {
+    res.status(500).end(err.message);
+  }
+});
 
 app.use('/health', healthRouter);
 app.use('/api/users', usersProxy);

@@ -1,0 +1,143 @@
+version: "3.9"
+
+# ─────────────────────────────────────────────────────────────
+# AutoOps Observability Stack — Phase 4
+# Start with: docker compose -f monitoring/docker-compose.monitoring.yml up -d
+# Requires the autoops-network to exist (created by docker-compose.yml)
+# ─────────────────────────────────────────────────────────────
+
+services:
+
+  prometheus:
+    image: prom/prometheus:v2.47.2
+    container_name: autoops-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules:/etc/prometheus/rules:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --web.console.templates=/etc/prometheus/consoles
+      - --web.enable-lifecycle
+      - --web.enable-admin-api
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    labels:
+      - "autoops.service=prometheus"
+      - "autoops.phase=4"
+
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: autoops-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/templates:/etc/alertmanager/templates:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --log.level=info
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "autoops.service=alertmanager"
+      - "autoops.phase=4"
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: autoops-grafana
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=autoops-grafana-2024
+      - GF_SERVER_HTTP_PORT=3001
+    networks:
+      - autoops-network
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    labels:
+      - "autoops.service=grafana"
+      - "autoops.phase=4"
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: autoops-node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=node-exporter"
+      - "autoops.phase=4"
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.3
+    container_name: autoops-cadvisor
+    ports:
+      - "8090:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=cadvisor"
+      - "autoops.phase=4"
+
+volumes:
+  prometheus_data:
+    name: autoops_prometheus_data
+  alertmanager_data:
+    name: autoops_alertmanager_data
+  grafana_data:
+    name: autoops_grafana_data
+
+networks:
+  autoops-network:
+    external: true
+    name: autoops-network

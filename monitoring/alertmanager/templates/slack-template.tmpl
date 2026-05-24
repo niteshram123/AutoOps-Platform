@@ -1,0 +1,60 @@
+{{/* ─────────────────────────────────────────────────────────────
+     AutoOps AlertManager notification templates
+     Used by Slack receivers (and as reference for webhook payloads).
+     ───────────────────────────────────────────────────────────── */}}
+
+{{/* Title line — shows status, count of firing alerts, and alert name */}}
+{{ define "slack.autoops.title" -}}
+[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .GroupLabels.alertname }}
+{{- end }}
+
+{{/* Body — iterates over all alerts in the group */}}
+{{ define "slack.autoops.text" -}}
+{{ range .Alerts -}}
+*Alert:*       {{ .Annotations.summary }}
+*Description:* {{ .Annotations.description }}
+*Severity:*    {{ .Labels.severity }}
+*Service:*     {{ .Labels.service }}
+*Runbook:*     {{ .Annotations.runbook }}
+*Started:*     {{ (.StartsAt.Format "2006-01-02 15:04:05 UTC") }}
+{{ if .EndsAt }}*Resolved:*    {{ (.EndsAt.Format "2006-01-02 15:04:05 UTC") }}{{ end }}
+---
+{{ end -}}
+{{- end }}
+
+{{/* Colour coding: critical=danger, warning=warning, resolved=good */}}
+{{ define "slack.autoops.color" -}}
+{{ if eq .Status "resolved" -}}
+  good
+{{- else if eq (index .GroupLabels "severity") "critical" -}}
+  danger
+{{- else -}}
+  warning
+{{- end }}
+{{- end }}
+
+{{/* Short one-line summary for the attachment fallback field */}}
+{{ define "slack.autoops.fallback" -}}
+{{ .GroupLabels.alertname }}: {{ .CommonAnnotations.summary }}
+{{- end }}
+
+{{/* Webhook JSON payload template (used when routing to healing-service) */}}
+{{ define "webhook.autoops.payload" -}}
+{
+  "version": "4",
+  "status": "{{ .Status }}",
+  "alertname": "{{ .GroupLabels.alertname }}",
+  "severity": "{{ index .GroupLabels "severity" }}",
+  "service": "{{ index .GroupLabels "service" }}",
+  "alerts": [
+    {{ range $i, $a := .Alerts -}}
+    {{ if $i }},{{ end }}{
+      "summary": "{{ $a.Annotations.summary }}",
+      "description": "{{ $a.Annotations.description }}",
+      "runbook": "{{ $a.Annotations.runbook }}",
+      "startsAt": "{{ $a.StartsAt.Format "2006-01-02T15:04:05Z07:00" }}"
+    }
+    {{- end }}
+  ]
+}
+{{- end }}

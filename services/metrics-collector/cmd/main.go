@@ -36,6 +36,9 @@ func main() {
 	startedAt := time.Now()
 	metricsCollector := collector.New()
 
+	// Start background goroutine that polls service health every 30s
+	metricsCollector.StartHealthPoller(cfg.ScrapeIntervalSeconds)
+
 	router := chi.NewRouter()
 	router.Get("/health", handlers.HealthHandler{Config: cfg, Collector: metricsCollector, StartedAt: startedAt}.ServeHTTP)
 	router.Get("/api/metrics", handlers.MetricsHandler{Config: cfg, Collector: metricsCollector}.ServeHTTP)
