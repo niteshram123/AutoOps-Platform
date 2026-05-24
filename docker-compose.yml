@@ -93,6 +93,45 @@ services:
       - "autoops.phase=1"
       - "autoops.version=1.0.0"
 
+  healing-service:
+    build:
+      context: ./healing-service
+      dockerfile: Dockerfile
+    image: autoops/healing-service:phase5
+    container_name: autoops-healing-service
+    ports:
+      - "8888:8888"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - ARGOCD_URL=http://argocd-server:8080
+      - ARGOCD_TOKEN=${ARGOCD_TOKEN:-}
+      - PROMETHEUS_URL=http://prometheus:9090
+      - GRAFANA_URL=http://grafana:3001
+      - GRAFANA_PASSWORD=autoops-grafana-2024
+      - WEBHOOK_SECRET=autoops-webhook-secret
+      - AI_ENABLED=${AI_ENABLED:-true}
+      - KUBERNETES_IN_CLUSTER=false
+      - LOG_LEVEL=info
+    volumes:
+      - healing_audit:/app/audit
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8888/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=healing-service"
+      - "autoops.phase=5"
+      - "autoops.version=1.0.0"
+
+volumes:
+  healing_audit:
+    name: autoops_healing_audit
+
 networks:
   autoops-network:
     name: autoops-network
