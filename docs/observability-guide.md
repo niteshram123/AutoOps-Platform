@@ -6,7 +6,7 @@ Phase 4 adds a complete observability stack to the AutoOps Platform:
 
 | Component        | Technology                          | Port  |
 |------------------|-------------------------------------|-------|
-| Metrics scraping | Prometheus v2.47.2                  | 9090  |
+| Metrics scraping | Prometheus v2.47.2                  | 9092  |
 | Alert routing    | AlertManager v0.26.0                | 9093  |
 | Visualisation    | Grafana v10.2.2                     | 3001  |
 | Host metrics     | Node Exporter v1.7.0                | 9100  |
@@ -184,13 +184,13 @@ kubectl get svc -n autoops-ops monitoring-grafana
 **Prometheus not scraping a service:**
 ```bash
 # Check targets
-curl http://localhost:9090/api/v1/targets | python3 -m json.tool | grep -A5 '"health"'
+curl http://localhost:9092/api/v1/targets | python3 -m json.tool | grep -A5 '"health"'
 ```
 
 **Grafana shows "No data":**
 - Ensure the monitoring stack and app stack are on the same Docker network
 - Run `./scripts/monitoring/load-generator.sh 60 5` to generate initial data
-- Check Prometheus targets page: http://localhost:9090/targets
+- Check Prometheus targets page: http://localhost:9092/targets
 
 **AlertManager not receiving alerts:**
 ```bash

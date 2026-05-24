@@ -26,7 +26,7 @@
 
 ```bash
 # Which service is generating errors?
-curl -s http://localhost:9090/api/v1/query \
+curl -s http://localhost:9092/api/v1/query \
   --data-urlencode 'query=rate(http_requests_total{status_code=~"5.."}[5m])' \
   | python3 -m json.tool | grep -E '"service"|"value"'
 ```
@@ -122,7 +122,7 @@ After remediation, confirm the error rate has dropped:
 
 ```bash
 # Watch error rate in real time
-watch -n 5 'curl -s "http://localhost:9090/api/v1/query" \
+watch -n 5 'curl -s "http://localhost:9092/api/v1/query" \
   --data-urlencode "query=rate(http_requests_total{status_code=~\"5..\"}[5m])/rate(http_requests_total[5m])*100" \
   | python3 -c "import json,sys; d=json.load(sys.stdin); [print(r[\"metric\"].get(\"service\",\"?\"), r[\"value\"][1]) for r in d[\"data\"][\"result\"]]"'
 ```

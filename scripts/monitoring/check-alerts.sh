@@ -7,7 +7,7 @@
 set -euo pipefail
 
 ALERTMANAGER_URL="${ALERTMANAGER_URL:-http://localhost:9093}"
-PROMETHEUS_URL="${PROMETHEUS_URL:-http://localhost:9090}"
+PROMETHEUS_URL="${PROMETHEUS_URL:-http://localhost:9092}"
 
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
