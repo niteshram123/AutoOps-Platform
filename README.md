@@ -379,10 +379,5 @@ All PRs require: ✅ CI passing · ✅ SonarQube quality gate · ✅ Trivy scan 
 
 ---
 
-## Interview Prep
-
-See [`docs/interview-prep.md`](docs/interview-prep.md) for 10 Q&A pairs, the 3-minute project pitch, and key metrics to mention.
-
----
 
 *Built as a complete 5-phase DevOps portfolio project demonstrating microservices, CI/CD, Kubernetes, observability, and AI-powered self-healing.*
