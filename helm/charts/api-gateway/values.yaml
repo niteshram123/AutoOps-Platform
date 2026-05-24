@@ -1,0 +1,24 @@
+replicaCount: 2
+image:
+  name: autoops/api-gateway
+service:
+  type: ClusterIP
+  port: 3000
+ingress:
+  enabled: false
+  className: nginx
+  host: api.autoops.local
+resources: {}
+logLevel: info
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+pdb:
+  enabled: false
+  minAvailable: 1
+serviceAccount:
+  create: true
+  name: ""

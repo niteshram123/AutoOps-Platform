@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-gateway-config
+  labels:
+    {{- include "api-gateway.labels" . | nindent 4 }}
+data:
+  NODE_ENV: {{ .Values.global.environment | quote }}
+  PORT: "3000"
+  USER_SERVICE_URL: "http://user-service:8000"
+  METRICS_SERVICE_URL: "http://metrics-collector:9091"
+  LOG_LEVEL: {{ .Values.logLevel | default "info" | quote }}

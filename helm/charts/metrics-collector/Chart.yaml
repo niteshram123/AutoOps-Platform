@@ -1,0 +1,6 @@
+apiVersion: v2
+name: metrics-collector
+description: AutoOps Metrics Collector Helm chart
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

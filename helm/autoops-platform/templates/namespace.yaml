@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: autoops-{{ .Values.global.environment | default "staging" }}
+  labels:
+    {{- include "autoops-platform.labels" . | nindent 4 }}
+    managed-by: argocd
+  annotations:
+    autoops.io/owner: "devops-team"
+    autoops.io/phase: "3"

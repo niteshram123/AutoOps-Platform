@@ -1,0 +1,22 @@
+apiVersion: v2
+name: autoops-platform
+description: AutoOps Platform - AI-Assisted Self-Healing CI/CD Platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+home: https://github.com/niteshram123/AutoOps-Platform
+sources:
+  - https://github.com/niteshram123/AutoOps-Platform
+maintainers:
+  - name: AutoOps Team
+    email: devops@autoops.io
+dependencies:
+  - name: api-gateway
+    version: "1.0.0"
+    repository: "file://../charts/api-gateway"
+  - name: user-service
+    version: "1.0.0"
+    repository: "file://../charts/user-service"
+  - name: metrics-collector
+    version: "1.0.0"
+    repository: "file://../charts/metrics-collector"
