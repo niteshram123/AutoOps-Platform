@@ -58,7 +58,8 @@ scrape_configs:
       - targets: ['node-exporter:9100']
 
   # cAdvisor — container-level metrics
-  - job_name: cadvisor
-    static_configs:
-      - targets: ['cadvisor:8080']
-    metrics_path: /metrics
+  # Uncomment when cadvisor container is running locally
+  # - job_name: cadvisor
+  #   static_configs:
+  #     - targets: ['cadvisor:8080']
+  #   metrics_path: /metrics

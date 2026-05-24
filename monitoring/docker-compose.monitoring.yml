@@ -110,25 +110,27 @@ services:
       - "autoops.service=node-exporter"
       - "autoops.phase=4"
 
-  cadvisor:
-    # bitnami/cadvisor mirrors the official cAdvisor image from Docker Hub
-    # (gcr.io/cadvisor is geo-restricted in some regions)
-    image: bitnami/cadvisor:0.49.1
-    container_name: autoops-cadvisor
-    ports:
-      - "8090:8080"
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker:/var/lib/docker:ro
-    networks:
-      - autoops-network
-    restart: unless-stopped
-    privileged: true
-    labels:
-      - "autoops.service=cadvisor"
-      - "autoops.phase=4"
+  # NOTE: cAdvisor (container metrics) is excluded from the local Docker Compose stack
+  # because gcr.io/cadvisor is geo-restricted and no reliable public mirror exists.
+  # Container metrics are available via kube-prometheus-stack in Kubernetes (Phase 3+).
+  # To add it locally, pull the image manually:
+  #   docker pull gcr.io/cadvisor/cadvisor:v0.47.3
+  # then uncomment the block below:
+  #
+  # cadvisor:
+  #   image: gcr.io/cadvisor/cadvisor:v0.47.3
+  #   container_name: autoops-cadvisor
+  #   ports:
+  #     - "8090:8080"
+  #   volumes:
+  #     - /:/rootfs:ro
+  #     - /var/run:/var/run:rw
+  #     - /sys:/sys:ro
+  #     - /var/lib/docker:/var/lib/docker:ro
+  #   networks:
+  #     - autoops-network
+  #   restart: unless-stopped
+  #   privileged: true
 
 volumes:
   prometheus_data:
