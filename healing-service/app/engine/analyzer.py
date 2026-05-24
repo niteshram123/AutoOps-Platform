@@ -93,18 +93,22 @@ _DEFAULT_RULE = {
 
 
 class AlertAnalyzer:
-    def __init__(self, ai_enabled: bool = True, anthropic_api_key: str = "") -> None:
-        self.ai_enabled = ai_enabled and bool(anthropic_api_key)
+    def __init__(self, ai_enabled: bool = True, openrouter_api_key: str = "", model: str = "anthropic/claude-3-haiku") -> None:
+        self.ai_enabled = ai_enabled and bool(openrouter_api_key)
+        self.model = model
         self._client = None
 
         if self.ai_enabled:
             try:
-                import anthropic
-                self._client = anthropic.Anthropic(api_key=anthropic_api_key)
-                logger.info("AI analyzer initialized with Claude API")
+                from openai import OpenAI
+                self._client = OpenAI(
+                    api_key=openrouter_api_key,
+                    base_url="https://openrouter.ai/api/v1",
+                )
+                logger.info("AI analyzer initialized with OpenRouter", extra={"model": self.model})
             except Exception as exc:
                 logger.warning(
-                    "anthropic client init failed — using rule-based fallback",
+                    "OpenRouter client init failed — using rule-based fallback",
                     extra={"error": str(exc)},
                 )
                 self.ai_enabled = False
@@ -170,20 +174,31 @@ class AlertAnalyzer:
             "Recommend the best healing action."
         )
 
-        # Run synchronous Anthropic client in thread pool
+        # Run synchronous OpenAI client in thread pool
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
             None,
-            lambda: self._client.messages.create(
-                model="claude-3-haiku-20240307",
+            lambda: self._client.chat.completions.create(
+                model=self.model,
                 max_tokens=512,
-                system=system_prompt,
-                messages=[{"role": "user", "content": user_prompt}],
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                extra_headers={
+                    "HTTP-Referer": "https://github.com/niteshram123/AutoOps-Platform",
+                    "X-Title": "AutoOps Self-Healing Engine",
+                },
             ),
         )
 
-        raw_text = response.content[0].text.strip()
-        data = json.loads(raw_text)
+        raw_text = response.choices[0].message.content.strip()
+        # Strip markdown code fences if model wraps in ```json ... ```
+        if raw_text.startswith("```"):
+            raw_text = raw_text.split("```")[1]
+            if raw_text.startswith("json"):
+                raw_text = raw_text[4:]
+        data = json.loads(raw_text.strip())
 
         rec = HealingRecommendation(
             action=data.get("action", "wait"),
@@ -204,6 +219,7 @@ class AlertAnalyzer:
                 "action": rec.action,
                 "confidence": rec.confidence,
                 "safe": rec.safe_to_automate,
+                "model": self.model,
             },
         )
         return rec

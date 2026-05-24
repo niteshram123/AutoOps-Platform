@@ -62,6 +62,12 @@ else
 fi
 
 echo -e "${YELLOW}[→] Building Docker images...${NC}"
+# Copy monitoring configs to a temp directory to avoid OneDrive bind-mount issues
+TMP_MON_DIR=$(mktemp -d -t autoops-monitoring-XXXX || mktemp -d)
+echo -e "${YELLOW}[→] Copying monitoring configs to temporary folder: ${TMP_MON_DIR}${NC}"
+cp -a "$(dirname "$0")/../monitoring/." "$TMP_MON_DIR/"
+export MONITORING_DIR="$TMP_MON_DIR"
+
 "${COMPOSE_CMD[@]}" build --no-cache
 
 echo -e "${YELLOW}[→] Starting containers...${NC}"

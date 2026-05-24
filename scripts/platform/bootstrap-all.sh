@@ -69,15 +69,15 @@ fi
 step "2/9" "Environment Setup"
 if [ ! -f "${ROOT_DIR}/.env" ]; then
   cp "${ROOT_DIR}/.env.example" "${ROOT_DIR}/.env"
-  warn ".env created from .env.example — please set ANTHROPIC_API_KEY"
+  warn ".env created from .env.example — please set OPENROUTER_API_KEY"
 else
   ok ".env exists"
 fi
 
-if grep -q "your-anthropic-api-key-here" "${ROOT_DIR}/.env" 2>/dev/null; then
-  warn "ANTHROPIC_API_KEY not set — healing service will use rule-based fallback"
+if grep -q "your-openrouter-api-key-here" "${ROOT_DIR}/.env" 2>/dev/null; then
+  warn "OPENROUTER_API_KEY not set — healing service will use rule-based fallback"
 else
-  ok "ANTHROPIC_API_KEY is configured"
+  ok "OPENROUTER_API_KEY is configured"
 fi
 
 mkdir -p "${ROOT_DIR}/reports" "${ROOT_DIR}/healing-audit"

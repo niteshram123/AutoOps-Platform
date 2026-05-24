@@ -104,9 +104,10 @@ curl http://localhost:8888/audit/events | python3 -m json.tool
 
 ## Enabling AI Mode
 
-Set your Anthropic API key in `.env`:
+Set your OpenRouter API key in `.env`:
 ```bash
-ANTHROPIC_API_KEY=sk-ant-your-key-here
+OPENROUTER_API_KEY=sk-or-your-key-here
+OPENROUTER_MODEL=anthropic/claude-3-haiku
 AI_ENABLED=true
 ```
 
@@ -115,4 +116,4 @@ Then restart the healing service:
 docker compose up -d --build healing-service
 ```
 
-Get a free API key at https://console.anthropic.com/
+Get a free API key at https://openrouter.ai/keys

@@ -17,7 +17,7 @@
 
 ## What is AutoOps Platform?
 
-AutoOps is a complete DevOps platform built across 5 phases. It runs three microservices behind an API gateway, ships them through a Jenkins CI pipeline with quality gates and security scanning, deploys to Kubernetes via ArgoCD GitOps, monitors everything with Prometheus and Grafana, and — the crown jewel — automatically heals production incidents using an AI-powered self-healing engine backed by the Anthropic Claude API.
+AutoOps is a complete DevOps platform built across 5 phases. It runs three microservices behind an API gateway, ships them through a Jenkins CI pipeline with quality gates and security scanning, deploys to Kubernetes via ArgoCD GitOps, monitors everything with Prometheus and Grafana, and — the crown jewel — automatically heals production incidents using an AI-powered self-healing engine backed by OpenRouter (Claude, GPT-4o, Gemini and more).
 
 ---
 
@@ -97,7 +97,7 @@ graph TB
 | Dashboards (3) | Grafana 10 | ✅ |
 | Alert Rules (7) | PromQL | ✅ |
 | SLO Tracking | Recording rules | ✅ |
-| AI-Powered Healing | Anthropic Claude | ✅ |
+| AI-Powered Healing | OpenRouter (Claude / GPT-4o / Gemini) | ✅ |
 | Rule-Based Fallback | Deterministic rules | ✅ |
 | Healing Audit Trail | REST API + JSON | ✅ |
 | Grafana Annotations | Auto on heal events | ✅ |
@@ -116,7 +116,34 @@ cd AutoOps-Platform
 
 # Configure (optional — works without API key using rule-based fallback)
 cp .env.example .env
-# Edit .env: set ANTHROPIC_API_KEY=sk-ant-your-key
+# Edit .env: set OPENROUTER_API_KEY=sk-or-your-key
+
+## Start everything with one command
+
+There are helper scripts to start the entire platform (core services, CI, registry, monitoring, and frontend) with a single command.
+
+On Linux/macOS:
+
+```bash
+./start-all.sh
+```
+
+On Windows (PowerShell / CMD):
+
+```powershell
+.
+start-all.bat
+```
+
+The scripts will build and start all services using Docker Compose files: `docker-compose.yml`, `ci/sonarqube/docker-compose.sonar.yml`, `ci/registry/docker-compose.registry.yml` and `monitoring/docker-compose.monitoring.yml`.
+
+To stop all services:
+
+```bash
+./stop-all.sh
+# or on Windows
+stop-all.bat
+```
 
 # Boot the entire platform
 ./scripts/platform/bootstrap-all.sh
@@ -329,7 +356,7 @@ autoops-platform/
 | Orchestration | Kubernetes, Helm 3, ArgoCD |
 | CI/CD | Jenkins, SonarQube, Trivy |
 | Observability | Prometheus, Grafana, AlertManager |
-| AI | Anthropic Claude (claude-3-haiku) |
+| AI | OpenRouter (anthropic/claude-3-haiku, openai/gpt-4o-mini, etc.) |
 | IaC | Terraform |
 | Secrets | Sealed Secrets (bitnami-labs) |
 | Testing | Jest, pytest, Go testing |

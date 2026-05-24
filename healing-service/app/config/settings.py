@@ -7,7 +7,8 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "info"
 
     # AI
-    ANTHROPIC_API_KEY: str = ""
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_MODEL: str = "anthropic/claude-3-haiku"
     AI_ENABLED: bool = True
 
     # ArgoCD

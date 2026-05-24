@@ -18,7 +18,7 @@ Copy `.env.example` to `.env` and fill in your values:
 
 ```bash
 cp .env.example .env
-# Edit .env with your ANTHROPIC_API_KEY, ARGOCD_TOKEN, etc.
+# Edit .env with your OPENROUTER_API_KEY, ARGOCD_TOKEN, etc.
 ```
 
 The `.env` file is gitignored and never committed.
@@ -39,7 +39,7 @@ The `.env` file is gitignored and never committed.
 
 ```bash
 ./secrets/seal-secret.sh healing-service-secrets autoops-ops \
-  anthropic-api-key=sk-ant-xxx \
+  openrouter-api-key=sk-or-your-key \
   argocd-token=your-token \
   webhook-secret=autoops-webhook-secret
 ```
@@ -57,7 +57,7 @@ kubectl apply -f secrets/sealed/healing-service-secrets-autoops-ops.yaml
 ```bash
 # Re-seal with new value
 ./secrets/seal-secret.sh healing-service-secrets autoops-ops \
-  anthropic-api-key=sk-ant-new-key
+  openrouter-api-key=sk-or-new-key
 
 # Apply the updated SealedSecret
 kubectl apply -f secrets/sealed/healing-service-secrets-autoops-ops.yaml

@@ -77,8 +77,8 @@ AlertManager ──► Healing Service ──► AI Analysis (Claude) ──► 
 
 ### 2. Alert Analyzer (`app/engine/analyzer.py`)
 
-**AI Mode (Claude API):**
-- Sends structured prompt to `claude-3-haiku-20240307`
+**AI Mode (OpenRouter API):**
+- Sends structured prompt to the configured model (default: `anthropic/claude-3-haiku` via OpenRouter)
 - Receives JSON recommendation: action, confidence, reasoning, safe_to_automate
 - Parses and validates response
 

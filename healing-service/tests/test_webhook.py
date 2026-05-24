@@ -45,7 +45,7 @@ RESOLVED_PAYLOAD = {**FIRING_PAYLOAD, "status": "resolved",
 @pytest.fixture
 def mock_app():
     """Set up app state with mocks."""
-    mock_settings = Settings(WEBHOOK_SECRET="test-secret", ANTHROPIC_API_KEY="")
+    mock_settings = Settings(WEBHOOK_SECRET="test-secret", OPENROUTER_API_KEY="")
     mock_audit = AsyncMock(spec=AuditStore)
     mock_event = HealingEvent(
         id="test-event-id",

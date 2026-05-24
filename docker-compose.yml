@@ -102,7 +102,8 @@ services:
     ports:
       - "8888:8888"
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-anthropic/claude-3-haiku}
       - ARGOCD_URL=http://argocd-server:8080
       - ARGOCD_TOKEN=${ARGOCD_TOKEN:-}
       - PROMETHEUS_URL=http://prometheus:9090
@@ -125,6 +126,34 @@ services:
     restart: unless-stopped
     labels:
       - "autoops.service=healing-service"
+      - "autoops.phase=5"
+      - "autoops.version=1.0.0"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: autoops/frontend:latest
+    container_name: autoops-frontend
+    ports:
+      - "3030:80"
+    environment:
+      - NODE_ENV=production
+      - API_BASE_URL=/api
+    depends_on:
+      - api-gateway
+      - healing-service
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=frontend"
       - "autoops.phase=5"
       - "autoops.version=1.0.0"
 
