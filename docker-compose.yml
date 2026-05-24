@@ -102,7 +102,8 @@ services:
     ports:
       - "8888:8888"
     environment:
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-anthropic/claude-3-haiku}
       - ARGOCD_URL=http://argocd-server:8080
       - ARGOCD_TOKEN=${ARGOCD_TOKEN:-}
       - PROMETHEUS_URL=http://prometheus:9090

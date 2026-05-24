@@ -14,7 +14,7 @@
 
 ```bash
 cp .env.example .env
-# Fill in ANTHROPIC_API_KEY, ARGOCD_TOKEN
+# Fill in OPENROUTER_API_KEY, ARGOCD_TOKEN
 ```
 
 The `.env` file is in `.gitignore` and never committed.
@@ -35,7 +35,7 @@ Sealed Secrets uses asymmetric encryption. The controller holds the private key 
 
 ```bash
 ./secrets/seal-secret.sh healing-service-secrets autoops-ops \
-  anthropic-api-key=sk-ant-your-key \
+  openrouter-api-key=sk-or-your-key \
   argocd-token=your-argocd-token \
   webhook-secret=autoops-webhook-secret
 # Creates: secrets/sealed/healing-service-secrets-autoops-ops.yaml
@@ -52,7 +52,7 @@ kubectl apply -f secrets/sealed/healing-service-secrets-autoops-ops.yaml
 
 ```bash
 ./secrets/seal-secret.sh healing-service-secrets autoops-ops \
-  anthropic-api-key=sk-ant-new-key
+  openrouter-api-key=sk-or-new-key
 kubectl apply -f secrets/sealed/healing-service-secrets-autoops-ops.yaml
 kubectl rollout restart deployment/healing-service -n autoops-ops
 ```
@@ -63,7 +63,7 @@ kubectl rollout restart deployment/healing-service -n autoops-ops
 
 | Secret Name | Namespace | Keys | Used By |
 |-------------|-----------|------|---------|
-| `healing-service-secrets` | `autoops-ops` | `anthropic-api-key`, `argocd-token`, `webhook-secret` | healing-service |
+| `healing-service-secrets` | `autoops-ops` | `openrouter-api-key`, `argocd-token`, `webhook-secret` | healing-service |
 | `registry-credentials` | all | `.dockerconfigjson` | image pulls |
 | `sonarqube-token` | `autoops-ops` | `token` | CI pipeline |
 

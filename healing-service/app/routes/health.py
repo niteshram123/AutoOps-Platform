@@ -22,6 +22,6 @@ async def health(request: Request) -> JSONResponse:
             "version": "1.0.0",
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "uptime_seconds": round(uptime, 1),
-            "ai_enabled": settings.AI_ENABLED and bool(settings.ANTHROPIC_API_KEY),
+            "ai_enabled": settings.AI_ENABLED and bool(settings.OPENROUTER_API_KEY),
         }
     )
