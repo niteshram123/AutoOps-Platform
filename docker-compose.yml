@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   api-gateway:
     build:
@@ -102,3 +100,5 @@ networks:
     ipam:
       config:
         - subnet: 172.20.0.0/24
+    labels:
+      com.docker.compose.network: "autoops-network"

@@ -1,5 +1,3 @@
-version: "3.9"
-
 # ─────────────────────────────────────────────────────────────
 # AutoOps Observability Stack — Phase 4
 # Start with: docker compose -f monitoring/docker-compose.monitoring.yml up -d
@@ -12,7 +10,7 @@ services:
     image: prom/prometheus:v2.47.2
     container_name: autoops-prometheus
     ports:
-      - "9090:9090"
+      - "9092:9090"
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/rules:/etc/prometheus/rules:ro
@@ -113,18 +111,21 @@ services:
       - "autoops.phase=4"
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.47.3
+    # bitnami/cadvisor mirrors the official cAdvisor image from Docker Hub
+    # (gcr.io/cadvisor is geo-restricted in some regions)
+    image: bitnami/cadvisor:0.49.1
     container_name: autoops-cadvisor
     ports:
       - "8090:8080"
     volumes:
       - /:/rootfs:ro
-      - /var/run:/var/run:ro
+      - /var/run:/var/run:rw
       - /sys:/sys:ro
       - /var/lib/docker:/var/lib/docker:ro
     networks:
       - autoops-network
     restart: unless-stopped
+    privileged: true
     labels:
       - "autoops.service=cadvisor"
       - "autoops.phase=4"

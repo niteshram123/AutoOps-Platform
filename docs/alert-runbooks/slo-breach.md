@@ -39,7 +39,7 @@ Monthly error budget (99.9% SLO): **43.2 minutes** of allowed downtime.
 
 ```bash
 # Current availability per service
-curl -s "http://localhost:9090/api/v1/query" \
+curl -s "http://localhost:9092/api/v1/query" \
   --data-urlencode 'query=autoops:availability:1h' \
   | python3 -c "
 import json, sys
@@ -51,7 +51,7 @@ for r in d['data']['result']:
 "
 
 # Error budget remaining
-curl -s "http://localhost:9090/api/v1/query" \
+curl -s "http://localhost:9092/api/v1/query" \
   --data-urlencode 'query=clamp_min((1 - (1 - avg(autoops:http_request_success_rate:5m)) / 0.001) * 100, 0)' \
   | python3 -c "import json,sys; d=json.load(sys.stdin); print('Budget remaining:', d['data']['result'][0]['value'][1], '%')"
 ```
@@ -60,7 +60,7 @@ curl -s "http://localhost:9090/api/v1/query" \
 
 ```bash
 # Error rate by service and status code
-curl -s "http://localhost:9090/api/v1/query" \
+curl -s "http://localhost:9092/api/v1/query" \
   --data-urlencode 'query=sum(rate(http_requests_total{status_code=~"5.."}[5m])) by (service, status_code)' \
   | python3 -m json.tool
 ```
@@ -70,7 +70,7 @@ curl -s "http://localhost:9090/api/v1/query" \
 A burn rate > 14.4x means the monthly error budget will be exhausted in under 1 hour.
 
 ```bash
-curl -s "http://localhost:9090/api/v1/query" \
+curl -s "http://localhost:9092/api/v1/query" \
   --data-urlencode 'query=(1 - autoops:http_request_success_rate:5m) / 0.001' \
   | python3 -c "
 import json, sys

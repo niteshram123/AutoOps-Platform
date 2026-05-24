@@ -9,7 +9,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 MONITORING_DIR="${ROOT_DIR}/monitoring"
 
-PROMETHEUS_URL="http://localhost:9090"
+PROMETHEUS_URL="http://localhost:9092"
 GRAFANA_URL="http://localhost:3001"
 ALERTMANAGER_URL="http://localhost:9093"
 GRAFANA_USER="admin"
