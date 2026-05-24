@@ -1,0 +1,58 @@
+groups:
+  - name: kubernetes.health
+    rules:
+      - alert: KubernetesPodNotReady
+        expr: |
+          kube_pod_status_ready{condition="true"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Pod {{ $labels.pod }} not ready"
+          description: "Pod {{ $labels.namespace }}/{{ $labels.pod }} has been in a non-ready state for more than 5 minutes."
+
+      - alert: KubernetesDeploymentReplicasMismatch
+        expr: |
+          kube_deployment_spec_replicas != kube_deployment_status_available_replicas
+        for: 10m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Deployment {{ $labels.deployment }} replicas mismatch"
+          description: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} has {{ $value }} available replicas, expected {{ $labels.spec_replicas }}."
+
+      - alert: KubernetesNodeNotReady
+        expr: |
+          kube_node_status_condition{condition="Ready", status="true"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: devops
+        annotations:
+          summary: "Node {{ $labels.node }} is not ready"
+          description: "Node {{ $labels.node }} has been in a NotReady state for more than 5 minutes."
+
+      - alert: KubernetesPersistentVolumeFillingUp
+        expr: |
+          kubelet_volume_stats_available_bytes
+          / kubelet_volume_stats_capacity_bytes < 0.15
+        for: 5m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "PersistentVolume {{ $labels.persistentvolumeclaim }} filling up"
+          description: "PersistentVolume {{ $labels.namespace }}/{{ $labels.persistentvolumeclaim }} is {{ $value | humanizePercentage }} full."
+
+      - alert: KubernetesContainerOOMKilled
+        expr: |
+          kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+        for: 0m
+        labels:
+          severity: warning
+          team: devops
+        annotations:
+          summary: "Container {{ $labels.container }} OOM killed"
+          description: "Container {{ $labels.container }} in pod {{ $labels.namespace }}/{{ $labels.pod }} was OOM killed."

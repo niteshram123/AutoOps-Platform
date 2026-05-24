@@ -1,0 +1,203 @@
+# ─────────────────────────────────────────────────────────────
+# kube-prometheus-stack Helm values — AutoOps Platform Phase 4
+#
+# Deploy:
+#   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+#   helm repo update
+#   helm install monitoring prometheus-community/kube-prometheus-stack \
+#     -n autoops-ops --create-namespace \
+#     -f helm/monitoring/kube-prometheus-values.yaml
+# ─────────────────────────────────────────────────────────────
+
+prometheus:
+  enabled: true
+  prometheusSpec:
+    retention: 15d
+    retentionSize: "10GB"
+    # Scrape interval aligned with our local config
+    scrapeInterval: "15s"
+    evaluationInterval: "15s"
+    externalLabels:
+      cluster: autoops-k8s
+      environment: production
+
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+
+    # Auto-discover pods in our namespaces that have the scrape annotation
+    additionalScrapeConfigs:
+      - job_name: autoops-staging
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names: [autoops-staging, autoops-production]
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: "true"
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+          - action: labelmap
+            regex: __meta_kubernetes_pod_label_(.+)
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: kubernetes_namespace
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: kubernetes_pod_name
+
+    # Load our custom rules from a ConfigMap
+    ruleSelector:
+      matchLabels:
+        release: monitoring
+    ruleSelectorNilUsesHelmValues: false
+
+    additionalPrometheusRulesMap:
+      autoops-rules:
+        groups:
+          - name: autoops.availability
+            interval: 30s
+            rules:
+              - alert: ServiceDown
+                expr: up{job=~"api-gateway|user-service|metrics-collector"} == 0
+                for: 1m
+                labels:
+                  severity: critical
+                  team: devops
+                annotations:
+                  summary: "Service {{ $labels.job }} is down"
+                  description: "{{ $labels.job }} has been unreachable for more than 1 minute"
+              - alert: HighErrorRate
+                expr: |
+                  (rate(http_requests_total{status_code=~"5.."}[5m]) / rate(http_requests_total[5m])) > 0.05
+                for: 2m
+                labels:
+                  severity: critical
+                  team: devops
+                annotations:
+                  summary: "High error rate on {{ $labels.service }}"
+                  description: "Error rate is {{ $value | humanizePercentage }} on {{ $labels.service }}"
+              - alert: HighLatency
+                expr: |
+                  histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 0.5
+                for: 3m
+                labels:
+                  severity: warning
+                  team: devops
+                annotations:
+                  summary: "High P95 latency on {{ $labels.service }}"
+                  description: "P95 latency is {{ $value | humanizeDuration }} on {{ $labels.service }}"
+          - name: autoops.slo.recording
+            rules:
+              - record: autoops:http_request_success_rate:5m
+                expr: |
+                  sum(rate(http_requests_total{status_code=~"2.."}[5m])) by (service)
+                  / sum(rate(http_requests_total[5m])) by (service)
+              - record: autoops:http_request_error_rate:5m
+                expr: |
+                  sum(rate(http_requests_total{status_code=~"5.."}[5m])) by (service)
+                  / sum(rate(http_requests_total[5m])) by (service)
+              - record: autoops:http_p95_latency:5m
+                expr: |
+                  histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le))
+              - record: autoops:availability:1h
+                expr: |
+                  (sum(rate(http_requests_total{status_code=~"2.."}[1h])) by (service)
+                  / sum(rate(http_requests_total[1h])) by (service)) * 100
+
+grafana:
+  enabled: true
+  adminPassword: "autoops-grafana-2024"
+
+  service:
+    type: NodePort
+    nodePort: 32001
+
+  persistence:
+    enabled: true
+    size: 5Gi
+
+  # Auto-provision our dashboards from a ConfigMap
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: autoops
+          folder: AutoOps
+          type: file
+          options:
+            path: /var/lib/grafana/dashboards/autoops
+
+  dashboardsConfigMaps:
+    autoops: "autoops-dashboards"
+
+  grafana.ini:
+    server:
+      root_url: "%(protocol)s://%(domain)s:%(http_port)s/"
+    security:
+      allow_embedding: true
+    users:
+      allow_sign_up: false
+    dashboards:
+      default_home_dashboard_path: /var/lib/grafana/dashboards/autoops/autoops-overview.json
+
+alertmanager:
+  enabled: true
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['alertname', 'service', 'severity']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      receiver: autoops-webhook
+      routes:
+        - match:
+            severity: critical
+          receiver: autoops-webhook
+          group_wait: 10s
+          repeat_interval: 1h
+    receivers:
+      - name: autoops-webhook
+        webhook_configs:
+          - url: 'http://healing-service.autoops-ops:8888/webhook/alert'
+            send_resolved: true
+    inhibit_rules:
+      - source_match:
+          severity: critical
+        target_match:
+          severity: warning
+        equal: ['service']
+
+nodeExporter:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true
+
+# Disable components not needed in local dev
+kubeApiServer:
+  enabled: true
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeDns:
+  enabled: false
+coreDns:
+  enabled: true
