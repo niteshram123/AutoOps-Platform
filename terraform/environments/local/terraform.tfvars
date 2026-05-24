@@ -1,0 +1,6 @@
+project_name         = "autoops"
+kube_context         = "kind-autoops"
+image_tag            = "latest"
+grafana_password     = "autoops-grafana-2024"
+prometheus_retention = "7d"
+environment          = "local"

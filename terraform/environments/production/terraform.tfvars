@@ -1,0 +1,6 @@
+project_name         = "autoops"
+kube_context         = "autoops-production"
+image_tag            = "stable"
+grafana_password     = "CHANGE_ME_IN_PRODUCTION"
+prometheus_retention = "30d"
+environment          = "production"
