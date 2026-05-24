@@ -1,8 +1,10 @@
-FROM jenkins/jenkins:2.426.1-lts-jdk17
+ARG TRIVY_VERSION=0.47.0
+FROM aquasec/trivy:${TRIVY_VERSION} AS trivy-bin
+
+FROM jenkins/jenkins:lts-jdk17
 
 USER root
 
-ARG TRIVY_VERSION=0.47.0
 ARG KUBECTL_VERSION=1.28.0
 ARG HELM_VERSION=3.13.2
 ARG SONAR_SCANNER_VERSION=5.0.1.3006
@@ -16,8 +18,6 @@ RUN apt-get update \
     && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list \
     && apt-get update \
     && apt-get install -y --no-install-recommends docker-ce-cli \
-    && curl -fsSL -o /tmp/trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz" \
-    && tar -xzf /tmp/trivy.tar.gz -C /usr/local/bin trivy \
     && curl -fsSL -o /usr/local/bin/kubectl "https://dl.k8s.io/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl" \
     && chmod +x /usr/local/bin/kubectl \
     && curl -fsSL -o /tmp/helm.tar.gz "https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz" \
@@ -28,6 +28,8 @@ RUN apt-get update \
     && ln -s "/opt/sonar-scanner-${SONAR_SCANNER_VERSION}-linux/bin/sonar-scanner" /usr/local/bin/sonar-scanner \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/*
+
+COPY --from=trivy-bin /usr/local/bin/trivy /usr/local/bin/trivy
 
 ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
 ENV JENKINS_HOME=/var/jenkins_home

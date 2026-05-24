@@ -1,0 +1,21 @@
+replicaCount: 1
+image:
+  name: autoops/metrics-collector
+service:
+  type: ClusterIP
+  httpPort: 9091
+  metricsPort: 9090
+resources: {}
+logLevel: info
+hpa:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+serviceMonitor:
+  enabled: true
+  interval: 30s
+serviceAccount:
+  create: true
+  name: ""
