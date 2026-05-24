@@ -12,8 +12,9 @@ services:
     ports:
       - "9092:9090"
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./prometheus/rules:/etc/prometheus/rules:ro
+      # Mount the whole prometheus folder. MONITORING_DIR may be overridden by
+      # the start script to copy configs to a non-OneDrive temp path on Windows.
+      - ${MONITORING_DIR:-./monitoring}/prometheus:/etc/prometheus:ro
       - prometheus_data:/prometheus
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -42,8 +43,7 @@ services:
     ports:
       - "9093:9093"
     volumes:
-      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-      - ./alertmanager/templates:/etc/alertmanager/templates:ro
+      - ${MONITORING_DIR:-./monitoring}/alertmanager:/etc/alertmanager:ro
       - alertmanager_data:/alertmanager
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
@@ -67,9 +67,9 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./grafana/grafana.ini:/etc/grafana/grafana.ini:ro
-      - ./grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+      - ${MONITORING_DIR:-./monitoring}/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ${MONITORING_DIR:-./monitoring}/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ${MONITORING_DIR:-./monitoring}/grafana/dashboards:/etc/grafana/dashboards:ro
       - grafana_data:/var/lib/grafana
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=autoops-grafana-2024

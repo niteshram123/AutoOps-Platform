@@ -1,4 +1,3 @@
-version: "3.9"
 services:
   sonarqube:
     image: sonarqube:10.3-community
@@ -36,7 +35,7 @@ services:
 
   jenkins:
     build:
-      context: ../jenkins
+      context: ./ci/jenkins
       dockerfile: Dockerfile
     container_name: autoops-jenkins
     ports: ["8080:8080", "50000:50000"]

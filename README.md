@@ -118,6 +118,33 @@ cd AutoOps-Platform
 cp .env.example .env
 # Edit .env: set OPENROUTER_API_KEY=sk-or-your-key
 
+## Start everything with one command
+
+There are helper scripts to start the entire platform (core services, CI, registry, monitoring, and frontend) with a single command.
+
+On Linux/macOS:
+
+```bash
+./start-all.sh
+```
+
+On Windows (PowerShell / CMD):
+
+```powershell
+.
+start-all.bat
+```
+
+The scripts will build and start all services using Docker Compose files: `docker-compose.yml`, `ci/sonarqube/docker-compose.sonar.yml`, `ci/registry/docker-compose.registry.yml` and `monitoring/docker-compose.monitoring.yml`.
+
+To stop all services:
+
+```bash
+./stop-all.sh
+# or on Windows
+stop-all.bat
+```
+
 # Boot the entire platform
 ./scripts/platform/bootstrap-all.sh
 

@@ -15,4 +15,13 @@ else
   "${COMPOSE_CMD[@]}" down --remove-orphans
 fi
 
+# Cleanup temporary monitoring copies created by start.sh
+TMP_BASE=${TMPDIR:-/tmp}
+for d in "$TMP_BASE"/autoops-monitoring-*; do
+  if [ -d "$d" ]; then
+    echo -e "${YELLOW}[→] Removing temporary monitoring copy: $d${NC}"
+    rm -rf "$d" || true
+  fi
+done
+
 echo -e "${GREEN}[✓] AutoOps Platform stopped${NC}"
