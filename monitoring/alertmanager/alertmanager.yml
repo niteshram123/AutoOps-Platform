@@ -53,8 +53,9 @@ receivers:
           bearer_token: 'autoops-webhook-secret'
     email_configs:
       - to: 'devops-team@autoops.io'
-        subject: '[CRITICAL] {{ .GroupLabels.alertname }} - AutoOps Platform'
-        body: '{{ template "email.default.html" . }}'
+        headers:
+          Subject: '[CRITICAL] {{ .GroupLabels.alertname }} - AutoOps Platform'
+        text: '{{ template "slack.autoops.text" . }}'
         send_resolved: true
 
   - name: 'warning-webhook'

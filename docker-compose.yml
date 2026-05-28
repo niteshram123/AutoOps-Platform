@@ -71,7 +71,6 @@ services:
     container_name: autoops-metrics-collector
     ports:
       - "9091:9091"
-      - "9090:9090"
     environment:
       - SERVICE_NAME=metrics-collector
       - VERSION=1.0.0
@@ -133,6 +132,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_GRAFANA_URL: ${VITE_GRAFANA_URL:-http://localhost:3001}
+        VITE_JENKINS_URL: ${VITE_JENKINS_URL:-http://localhost:8080}
+        VITE_ARGOCD_URL: ${VITE_ARGOCD_URL:-http://localhost:8081}
+        VITE_SONARQUBE_URL: ${VITE_SONARQUBE_URL:-http://localhost:9000}
+        VITE_PROMETHEUS_URL: ${VITE_PROMETHEUS_URL:-http://localhost:9090}
+        VITE_ALERTMANAGER_URL: ${VITE_ALERTMANAGER_URL:-http://localhost:9093}
+        VITE_REGISTRY_UI_URL: ${VITE_REGISTRY_UI_URL:-http://localhost:8082}
     image: autoops/frontend:latest
     container_name: autoops-frontend
     ports:
@@ -144,7 +151,7 @@ services:
       - api-gateway
       - healing-service
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -157,9 +164,266 @@ services:
       - "autoops.phase=5"
       - "autoops.version=1.0.0"
 
+  prometheus:
+    image: prom/prometheus:v2.47.2
+    container_name: autoops-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ${MONITORING_DIR:-./monitoring}/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=15d
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --web.console.templates=/etc/prometheus/consoles
+      - --web.enable-lifecycle
+      - --web.enable-admin-api
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+      metrics-collector:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=prometheus"
+      - "autoops.phase=4"
+
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: autoops-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ${MONITORING_DIR:-./monitoring}/alertmanager:/etc/alertmanager:ro
+      - alertmanager_data:/alertmanager
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --log.level=info
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=alertmanager"
+      - "autoops.phase=4"
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: autoops-grafana
+    ports:
+      - "3001:3001"
+    volumes:
+      - ${MONITORING_DIR:-./monitoring}/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
+      - ${MONITORING_DIR:-./monitoring}/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ${MONITORING_DIR:-./monitoring}/grafana/dashboards:/etc/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-autoops-grafana-2024}
+      - GF_SERVER_HTTP_PORT=3001
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=grafana"
+      - "autoops.phase=4"
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: autoops-node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.sysfs=/host/sys
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=node-exporter"
+      - "autoops.phase=4"
+
+  sonar-db:
+    image: postgres:15-alpine
+    container_name: autoops-sonar-db
+    environment:
+      - POSTGRES_USER=sonar
+      - POSTGRES_PASSWORD=${SONAR_DB_PASSWORD:-sonarpass}
+      - POSTGRES_DB=sonarqube
+    volumes:
+      - sonar_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sonar"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=sonar-db"
+      - "autoops.phase=4"
+
+  sonarqube:
+    image: sonarqube:10.3-community
+    container_name: autoops-sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_JDBC_URL=jdbc:postgresql://sonar-db:5432/sonarqube
+      - SONAR_JDBC_USERNAME=sonar
+      - SONAR_JDBC_PASSWORD=${SONAR_DB_PASSWORD:-sonarpass}
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    depends_on:
+      sonar-db:
+        condition: service_healthy
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=sonarqube"
+      - "autoops.phase=4"
+
+  jenkins:
+    build:
+      context: ./ci/jenkins
+      dockerfile: Dockerfile
+    container_name: autoops-jenkins
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - JENKINS_ADMIN_PASSWORD=${JENKINS_ADMIN_PASSWORD:-autoops-admin-2024}
+      - SONARQUBE_TOKEN=${SONARQUBE_TOKEN:-autoops-sonar-token}
+      - REGISTRY_USER=${REGISTRY_USER:-admin}
+      - REGISTRY_PASSWORD=${REGISTRY_PASSWORD:-autoops-registry-2024}
+      - GITLAB_WEBHOOK_SECRET=${GITLAB_WEBHOOK_SECRET:-autoops-webhook-secret}
+    depends_on:
+      - sonarqube
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=jenkins"
+      - "autoops.phase=4"
+
+  argocd-server:
+    image: quay.io/argoproj/argocd:v2.11.3
+    container_name: autoops-argocd
+    ports:
+      - "8081:8080"
+    command:
+      - argocd-server
+      - --insecure
+      - --disable-auth
+      - --port
+      - "8080"
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=argocd"
+      - "autoops.phase=4"
+
+  registry:
+    image: registry:2.8
+    container_name: autoops-registry
+    ports:
+      - "5000:5000"
+    environment:
+      - REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY=/data
+      - REGISTRY_AUTH=htpasswd
+      - REGISTRY_AUTH_HTPASSWD_REALM=AutoOps Registry
+      - REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd
+    volumes:
+      - registry_data:/data
+      - ./auth:/auth:ro
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=registry"
+      - "autoops.phase=4"
+
+  registry-ui:
+    image: joxit/docker-registry-ui:2.5
+    container_name: autoops-registry-ui
+    ports:
+      - "8082:80"
+    environment:
+      - REGISTRY_TITLE=AutoOps Registry
+      - REGISTRY_URL=http://registry:5000
+      - SINGLE_REGISTRY=true
+    depends_on:
+      - registry
+    networks:
+      - autoops-network
+    restart: unless-stopped
+    labels:
+      - "autoops.service=registry-ui"
+      - "autoops.phase=4"
+
 volumes:
   healing_audit:
     name: autoops_healing_audit
+  prometheus_data:
+    name: autoops_prometheus_data
+  alertmanager_data:
+    name: autoops_alertmanager_data
+  grafana_data:
+    name: autoops_grafana_data
+  sonar_db_data:
+    name: autoops_sonar_db_data
+  sonarqube_data:
+    name: autoops_sonarqube_data
+  sonarqube_logs:
+    name: autoops_sonarqube_logs
+  sonarqube_extensions:
+    name: autoops_sonarqube_extensions
+  jenkins_home:
+    name: autoops_jenkins_home
+  registry_data:
+    name: autoops_registry_data
 
 networks:
   autoops-network:

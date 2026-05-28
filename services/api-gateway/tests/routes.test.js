@@ -17,6 +17,14 @@ describe('gateway routes', () => {
     expect(response.status).toBe(200);
   });
 
+  test('GET / returns service index', async () => {
+    const response = await request(app).get('/');
+
+    expect(response.status).toBe(200);
+    expect(response.body.service).toBe('api-gateway');
+    expect(response.body.routes.health).toBe('/health');
+  });
+
   test('GET /nonexistent returns 404', async () => {
     const response = await request(app).get('/nonexistent');
 

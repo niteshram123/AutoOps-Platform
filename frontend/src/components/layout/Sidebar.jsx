@@ -1,12 +1,4 @@
-const LINKS = [
-  { label: 'Grafana', href: 'http://localhost:3001' },
-  { label: 'Jenkins', href: 'http://localhost:8080' },
-  { label: 'ArgoCD', href: 'http://localhost:8080' },
-  { label: 'SonarQube', href: 'http://localhost:9000' },
-  { label: 'Prometheus', href: 'http://localhost:9090' },
-  { label: 'AlertManager', href: 'http://localhost:9093' },
-  { label: 'Registry UI', href: 'http://localhost:5001' },
-]
+import { QUICK_LINKS, openQuickLink } from '../../config/quickLinks.js'
 
 const NAV_ITEMS = [
   { id: 'overview', label: 'Overview' },
@@ -33,8 +25,8 @@ export default function Sidebar({ activeTab, onTabChange }) {
       <div style={{ marginTop: '1rem' }}>
         <div style={{ fontSize: '0.85rem', letterSpacing: '0.22em', color: 'var(--text-secondary)', marginBottom: '1rem' }}>QUICK LINKS</div>
         <div style={{ display: 'grid', gap: '0.5rem' }}>
-          {LINKS.map((link) => (
-            <a key={link.label} href={link.href} target="_blank" rel="noreferrer" style={{ color: 'var(--text-secondary)', padding: '0.75rem 1rem', borderRadius: 12, background: 'rgba(148, 163, 184, 0.04)', display: 'block' }}>
+          {QUICK_LINKS.map((link) => (
+            <a key={link.label} href={link.href} onClick={(event) => { event.preventDefault(); openQuickLink(link) }} target="_blank" rel="noreferrer" style={{ color: 'var(--text-secondary)', padding: '0.75rem 1rem', borderRadius: 12, background: 'rgba(148, 163, 184, 0.04)', display: 'block' }}>
               {link.label}
             </a>
           ))}

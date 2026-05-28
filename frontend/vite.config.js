@@ -20,6 +20,21 @@ export default defineConfig({
         target: 'http://localhost:8080',
         rewrite: (path) => path.replace(/^\/api\/jenkins/, ''),
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('error', (error, req, res) => {
+            const body = JSON.stringify({
+              error: 'Jenkins unavailable',
+              message: error?.code || 'ECONNREFUSED',
+            })
+            if (!res.headersSent) {
+              res.writeHead(503, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-store',
+              })
+            }
+            res.end(body)
+          })
+        },
       },
     },
   },
