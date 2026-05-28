@@ -12,7 +12,7 @@ func TestNewCollector(t *testing.T) {
 
 	assert.NotNil(t, c)
 	assert.NotNil(t, c.Registry())
-	assert.Equal(t, 5, c.MetricsRegistered())
+	assert.Equal(t, 8, c.MetricsRegistered())
 }
 
 func TestRecordRequest(t *testing.T) {

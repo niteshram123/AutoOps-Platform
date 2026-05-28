@@ -57,6 +57,22 @@ app.include_router(health_router)
 app.include_router(users_router)
 
 
+@app.get("/")
+async def root():
+    return {
+        "service": settings.service_name,
+        "version": settings.service_version,
+        "status": "ok",
+        "routes": {
+            "health": "/health",
+            "docs": "/docs",
+            "openapi": "/openapi.json",
+            "users": "/users",
+            "metrics": "/metrics",
+        },
+    }
+
+
 @app.on_event("startup")
 async def startup_event():
     logging.getLogger("uvicorn.access").disabled = True

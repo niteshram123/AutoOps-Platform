@@ -3,10 +3,10 @@ services:
     build:
       target: builder
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
     volumes:
       - ./services/api-gateway/src:/app/src
-    command: npm run dev
+    command: npm start
 
   user-service:
     environment:

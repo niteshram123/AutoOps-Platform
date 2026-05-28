@@ -44,6 +44,20 @@ app.get('/metrics', async (req, res) => {
   }
 });
 
+app.get('/', (req, res) => {
+  res.json({
+    service: 'api-gateway',
+    version: '1.0.0',
+    status: 'ok',
+    routes: {
+      health: '/health',
+      metrics: '/metrics',
+      users: '/api/users',
+      customMetrics: '/api/metrics'
+    }
+  });
+});
+
 app.use('/health', healthRouter);
 app.use('/api/users', usersProxy);
 app.use('/api/metrics', metricsProxy);

@@ -21,6 +21,17 @@ async def test_health_returns_200():
 
 
 @pytest.mark.asyncio
+async def test_root_returns_service_index():
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.get("/")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["service"] == "user-service"
+    assert body["routes"]["docs"] == "/docs"
+
+
+@pytest.mark.asyncio
 async def test_health_response_has_required_fields():
     async with AsyncClient(app=app, base_url="http://test") as client:
         response = await client.get("/health")

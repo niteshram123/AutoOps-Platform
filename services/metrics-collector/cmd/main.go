@@ -40,6 +40,20 @@ func main() {
 	metricsCollector.StartHealthPoller(cfg.ScrapeIntervalSeconds)
 
 	router := chi.NewRouter()
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"service": cfg.ServiceName,
+			"version": cfg.Version,
+			"status":  "ok",
+			"routes": map[string]string{
+				"health":        "/health",
+				"summary":       "/api/metrics",
+				"prometheus":    "/metrics",
+				"prometheusURL": fmt.Sprintf("http://localhost:%d/metrics", cfg.MetricsPort),
+			},
+		})
+	})
 	router.Get("/health", handlers.HealthHandler{Config: cfg, Collector: metricsCollector, StartedAt: startedAt}.ServeHTTP)
 	router.Get("/api/metrics", handlers.MetricsHandler{Config: cfg, Collector: metricsCollector}.ServeHTTP)
 
